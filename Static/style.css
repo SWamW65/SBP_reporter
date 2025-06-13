@@ -5,7 +5,7 @@
 	padding: 0;
 	margin: 0;
 	border: 0;
-   box-sizing: border-box;
+    box-sizing: border-box;
 }
 a {
 	text-decoration: none;
@@ -17,16 +17,332 @@ img {
 	vertical-align: top;
 }
 h1, h2, h3, h4, h5, h6 {
-   font-weight: inherit;
-   font-size: inherit;
-}
+    font-weight: inherit;
+    font-size: inherit;
+    }
 html, body {
-   height: 100%;
-   font-family: sans-serif;
-   font-size: 14px;
-   line-height: 1;
-   color: #252B42;
-   font-weight: 500;
-   background-color: #FAFAFA;
+    height: 100%;
+    font-family: sans-serif;
+    font-size: 14px;
+    line-height: 1;
+    color: #252B42;
+    font-weight: 500;
+    background-color: #f5f5f5;
 }
 /* Обнуление */
+
+.wrapper {
+    max-width: 1024px;
+    height: 100%;
+    margin: 0 auto;
+    background-color: #FAFAFA;
+    -webkit-box-shadow: 1px 4px 23px 4px rgba(34, 60, 80, 0.2);
+    -moz-box-shadow: 1px 4px 23px 4px rgba(34, 60, 80, 0.2);
+    box-shadow: 1px 4px 23px 4px rgba(34, 60, 80, 0.2);
+}
+
+/* header */
+
+header {
+    position: relative;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+header h3 {
+    color:#252B42;
+    font-size: 3em;
+    font-weight: 800;
+}
+.dialog {
+    top: 20%;
+    width: calc(100% - 40px);
+    max-width: 400px;
+    padding: 10px;
+    margin: auto;
+    -webkit-box-shadow: 1px 4px 23px 4px rgba(34, 60, 80, 0.2);
+    -moz-box-shadow: 1px 4px 23px 4px rgba(34, 60, 80, 0.2);
+    box-shadow: 1px 4px 23px 4px rgba(34, 60, 80, 0.2);
+}
+.dialog__wrapper {
+    width: 100%;
+    position: relative;
+
+}
+.dialog__header {
+    display: flex;
+    justify-content: center;
+}
+.dialog__header h4 {
+    color: #252B42;
+    font-weight: 700;
+    font-size: 1.4em;
+}
+.dialog__wrapper .offices-dialog__close {
+    position: absolute;
+    font-size: 1.4em;
+    top: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2px 3px;
+    border-radius: 50%;
+    transition: all .3s;
+}
+.dialog__wrapper .offices-dialog__close:hover {
+
+    background-color: #999;
+    color: #fff;
+}
+.dialog::backdrop {
+    background-color: rgb(0 0 0 / 0.6);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+.dialog__wrapper ul {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 0px;
+    gap: 2px;
+}
+.dialog__content {
+    padding: 10px 10px;
+}
+.dialog__wrapper ul li {
+    color: #222;
+    font-size: 1.2em;
+    font-weight: 500;
+    display: flex;
+    padding: 2px 0px;
+    align-items: center;
+    justify-content: space-between;
+    transition: all .3s;
+}
+
+.dialog__wrapper ul li:hover {
+    background-color: #999;
+    color: #fff;
+}
+.dialog__wrapper ul li:hover .offices-dialog__btns-block{
+    opacity: 1;
+}
+.dialog__wrapper ul li span{
+    margin-left: 10px;
+}
+.offices-dialog__btns-block {
+    margin-right: 10px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    opacity: .1;
+}
+.offices-dialog__btns-block button {
+    background: transparent;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all .3s;
+}
+.offices-dialog__btns-block button:hover {
+    color: #fff;
+}
+header menu {
+    display: flex;
+    gap: 10px;
+}
+.offices-dialog__close, .header__offices-btn {
+    font-weight: 600;
+    background: transparent;
+    cursor: pointer;
+}
+.offices-dialog__addbtn {
+    display: flex;
+    font-size: 1.4em;
+    justify-content: center;
+    align-items: center;
+    padding: 3px 40px;
+    font-weight: 500;
+    color: #51b176;
+    border: 1px solid #51b176;
+    background: transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all .3s;
+}
+.offices-dialog__addbtn:hover {
+    background-color: #51b176;
+    color: #fff;
+}
+.offices-dialog__addbtn:active {
+    opacity: 0.2;
+}
+.offices-dialog__add-block {
+    margin: 0 10px;
+    display: flex;
+    gap: 10px;
+}
+.offices-dialog__hidding-block {
+    width: 100%;
+    gap: 10px;
+    transition: all .3s;
+    display: none;  
+    opacity: 0; 
+}
+.offices-dialog__hidding-block.active {
+    display: flex;
+    opacity: 1;
+}
+#offices-dialog__addinput {
+    width: 100%;
+    padding-left: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 500;
+    color: #222;
+    border: 1px solid #51b176;
+    background: transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all .3s;
+}
+.offices-dialog__addinputbtn {
+    display: flex;
+    padding: 5px 5px;
+    justify-content: center;
+    align-items: center;
+    font-weight: 500;
+    color: #fff;
+    border: 1px solid #51b176;
+    background-color: #51b176;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all .3s;
+}
+.offices-dialog__addinputbtn:hover {
+    background: transparent;
+    color: #51b176;
+}
+#dialog__confirm-del {
+    top: 20%;
+    width: calc(100% - 40px);
+    max-width: 300px;
+    height: 100px;
+    padding: 10px;
+    margin: auto;
+    -webkit-box-shadow: 1px 4px 23px 4px rgba(34, 60, 80, 0.2);
+    -moz-box-shadow: 1px 4px 23px 4px rgba(34, 60, 80, 0.2);
+    box-shadow: 1px 4px 23px 4px rgba(34, 60, 80, 0.2);
+}
+.dialog-confirm-del__wrapper {
+    display: flex;   
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+.dialog-confirm-del__header {
+    padding-top: 10px;
+    display: flex;
+    justify-content: center;
+}
+.dialog-confirm-del__header h4 {
+    color: #252B42;
+    font-weight: 700;
+    font-size: 1.2em;
+}
+#dialog__confirm-del::backdrop {
+    background-color: rgb(0 0 0 / 0.6);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+.dialog-confirm-del__btn-block button {
+    display: flex;
+    width: 100px;
+    padding: 3px 0;
+    justify-content: center;
+    align-items: center;
+    font-weight: 500;
+    color: #222;
+    border: 1px solid #222;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all .3s;
+    background-color: transparent;
+}
+.dialog-confirm-del__btn-block button:hover {
+    opacity: .5;
+    background-color: #999;
+    color: #fff;
+}
+.dialog-confirm-del__btn-block {
+    display: flex;
+    width: 50%;
+    gap: 20px;
+}
+#edit-office__form {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    
+}
+.edit-office__btn-block {
+    padding-right: 7px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+}
+#edit-office__input {
+    margin-left: 10px;
+    width: 290px;
+    color: #fff;
+    font-size: 1em;
+    font-weight: 500;
+    display: flex;
+    padding: 2px 0px;
+    align-items: center;
+    justify-content: space-between;
+    transition: all .3s;
+    border: none;
+    background-color: #777;
+
+
+}
+#edit-office__form button {
+    font-size: 1.2em;
+    background: transparent;
+    cursor: pointer;
+    transition: all .5s;
+}
+#edit-office__form button:hover {
+    color: #fff;
+}
+
+/* header */
+.box {
+    display: flex;
+    padding: 20px;
+    gap: 20px;
+    align-items: center;
+}
+.inputs {
+    display: flex;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #444;
+    cursor: pointer;
+    transition: all .5s;
+}
+.inputs.btn {
+    background-color: #999;
+}
+.inputSpb {
+    background-color: #fff;
+}
+.ccm {
+    text-decoration: underline;
+}
+.btn:hover {
+    color: #fff;
+    opacity: .5;
+}

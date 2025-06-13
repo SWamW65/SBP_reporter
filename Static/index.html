@@ -1,14 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>SBP Report 1.0</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div>
+    <div class="wrapper">
+        <header>
+            <h3>SBP Report 1.0</h3>
+            <menu>
+                <li>Авторизация</li>
+                <li>
+                    <button class="header__offices-btn" type="button" onclick="window['offices-dialog-id'].show()">Салоны</button>
+                    <dialog class="dialog" id="offices-dialog-id" aria-labelledby="dialog-name">
+                        <div class="dialog__wrapper">
+                            <div class="dialog__header">
+                                <h4>Салоны</h4>
+                            </div>
+                            <div class="dialog__content">
+                                <ul>
+                                    <!-- здесь будет ренндериться список салоннов -->                             
+                                </ul>
+                                <div class="offices-dialog__add-block">
+                                    <button class="offices-dialog__addbtn"><ion-icon name="add-circle-outline"></ion-icon></button>
+                                    <div class="offices-dialog__hidding-block">
+                                        <input type="text" id="offices-dialog__addinput">
+                                        <button class="offices-dialog__addinputbtn">Ок</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="offices-dialog__close" type="button" onclick="window['offices-dialog-id'].close(); loadOfficesReport();"><ion-icon name="close"></ion-icon></button>
+                        </div>
+                    </dialog>
+                    <dialog id="dialog__confirm-del" aria-labelledby="dialog-delete">
+                        <form class="dialog-confirm-del__wrapper" method="dialog">
+                            <div class="dialog-confirm-del__header">
+                                <h4>Вы подтверждаете удаление?</h4>
+                            </div>
+                            <div class="dialog-confirm-del__btn-block">
+                                <button class="confirm-del__ok" value="yes">Ок</button>
+                                <button class="confirm-del__cancel" value="no">Отмена</button>
+                            </div>
+                        </а>
+                    </dialog>
+                </li>
+            </menu>
+        </header>
+        <main>
+
+            <section class="report-block">
+                <table border="1">
+                <thead>
+                    <tr>
+                    <th>Название салона</th>
+                    <th>Продажи по карте (₽)</th>
+                    <th>Продажи по СБП (₽)</th>
+                    <th>Соотношение (%)</th>
+                    <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Строка 1 (Салон "Люкс") -->
+
+                </tbody>
+                </table>
+            </section>  
+
+        </main>
+        <footer></footer>
 
     </div>
 <script src="script.js"></script>
+<script src="https://unpkg.com/ionicons@4.1.2/dist/ionicons.js"></script>
+
+
 </body>
 </html>
