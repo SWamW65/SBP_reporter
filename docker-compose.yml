@@ -17,6 +17,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - sbp_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: sbp_pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sbpreport.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+    networks:
+      - sbp_network
 
   backend:
     build: ./backend
@@ -31,6 +50,8 @@ services:
     ports:
       - "8000:8000"
     restart: unless-stopped
+    networks:
+      - sbp_network
 
   nginx:
     build: ./nginx
@@ -42,6 +63,13 @@ services:
     volumes:
       - ./static:/static
     restart: unless-stopped
+    networks:
+      - sbp_network
 
 volumes:
   postgres_data:
+  pgadmin_data:
+
+networks:
+  sbp_network:
+    driver: bridge
