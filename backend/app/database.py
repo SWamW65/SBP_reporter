@@ -1,9 +1,10 @@
+import os
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import UniqueConstraint
 
-
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:samlink@localhost:5432/sbpreport")
 
 Base = declarative_base()
 
@@ -46,6 +47,6 @@ class DailyReport(Base):
 
 
 # Подключение к PostgreSQL
-engine = create_engine('postgresql://postgres:samlink@db:5432/sbpreport', echo=True)
+engine = create_engine(DATABASE_URL, echo=True)
 Base.metadata.create_all(engine)
 SessionLocal = sessionmaker(bind=engine)
