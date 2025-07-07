@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    container_name: sbp_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: samlink
+      POSTGRES_DB: sbpreport
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: sbp_backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:samlink@db:5432/sbpreport
+    volumes:
+      - ./backend/app:/app/app
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  nginx:
+    build: ./nginx
+    container_name: sbp_nginx
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./static:/static
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
