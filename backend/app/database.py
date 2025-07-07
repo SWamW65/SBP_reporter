@@ -46,6 +46,6 @@ class DailyReport(Base):
 
 
 # Подключение к PostgreSQL
-engine = create_engine('postgresql://postgres:samlink@localhost:5432/sbpreport', echo=True)
+engine = create_engine('postgresql://postgres:samlink@db:5432/sbpreport', echo=True)
 Base.metadata.create_all(engine)
 SessionLocal = sessionmaker(bind=engine)

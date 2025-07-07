@@ -13,10 +13,10 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sbpreport"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
     networks:
       - sbp_network
 
@@ -45,6 +45,8 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:samlink@db:5432/sbpreport
+      SQLALCHEMY_POOL_RECYCLE: 3600
+      SQLALCHEMY_POOL_TIMEOUT: 30
     volumes:
       - ./backend/app:/app/app
     ports:

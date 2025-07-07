@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
-import database
+from app import database
 
 app = FastAPI()
 
