@@ -12,7 +12,7 @@
             <menu>
                 <li>Авторизация</li>
                 <li>
-                    <button class="header__offices-btn" type="button" onclick="window['offices-dialog-id'].show()">Салоны</button>
+                    <button class="header__offices-btn" type="button">Салоны</button>
                     <dialog class="dialog" id="offices-dialog-id" aria-labelledby="dialog-name">
                         <div class="dialog__wrapper">
                             <div class="dialog__header">
@@ -30,7 +30,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button class="offices-dialog__close" type="button" onclick="window['offices-dialog-id'].close(); loadOfficesReport();"><ion-icon name="close"></ion-icon></button>
+                            <button class="offices-dialog__close" type="button"><ion-icon name="close"></ion-icon></button>
                         </div>
                     </dialog>
                     <dialog id="dialog__confirm-del" aria-labelledby="dialog-delete">
@@ -50,14 +50,14 @@
         <main>
 
             <section class="report-block">
-                <table border="1">
+                <table>
                 <thead>
                     <tr>
-                    <th>Название салона</th>
-                    <th>Продажи по карте (₽)</th>
-                    <th>Продажи по СБП (₽)</th>
-                    <th>Соотношение (%)</th>
-                    <th>Действие</th>
+                        <th>Салон</th>
+                        <th>По карте (₽)</th>
+                        <th>По СБП (₽)</th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>

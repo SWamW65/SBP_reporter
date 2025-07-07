@@ -319,30 +319,62 @@ header menu {
 }
 
 /* header */
-.box {
+
+/* table report */
+main {
     display: flex;
-    padding: 20px;
-    gap: 20px;
-    align-items: center;
+    justify-content: center;
+    padding: 30px 0px;
 }
-.inputs {
-    display: flex;
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: 1px solid #444;
+.report-block {
+    padding: 20px;
+    border: 1px solid rgba(136, 136, 136, 0.247);
+}
+.report-block table, 
+.report-block button, 
+.report-block input,
+.report-block thead {
+    font-size: 1.2em;
+}
+.report-block thead tr th{
+    margin-bottom: 20px;
+    color: #555;
+}
+.report-block th:first-child {
+    width: 280px;
+}
+.report-block input{
+    width: 120px;
+    background: transparent;
+    padding-left: 5px;
+}
+.report-block tbody tr:nth-child(even) {
+    background-color: #f1f1f1;
+}
+.report-block tbody tr:hover {
+    background-color: #e2e2e2;
+}
+.report-block button {
+    background: transparent;
     cursor: pointer;
     transition: all .5s;
 }
-.inputs.btn {
-    background-color: #999;
+.report-block button:hover {
+    opacity: .5;
 }
-.inputSpb {
-    background-color: #fff;
+.report-block button ion-icon {
+    color: #1b6db1;
+    font-size: 1.3em;
 }
-.ccm {
+.report-block button:first-child {
+    color: #1b6db1;
+}
+.report-block button:first-child:hover {
     text-decoration: underline;
 }
-.btn:hover {
-    color: #fff;
-    opacity: .5;
+.report-block th:nth-child(4) {
+    width: 70px;
+}
+.report-block output span {
+    margin-left: 5px;
 }

@@ -1,6 +1,7 @@
 // Флаг для предотвращения множественных отправок
 let isSubmitting = false;
 
+// ТАБЛИЦА ОТЧЕТА -----------------------
   // Обработчик отправки данных салона
 async function sendReportData(e, form) {
     e.preventDefault();
@@ -11,23 +12,25 @@ async function sendReportData(e, form) {
     const row = submitButton.closest("tr");
     const salonName = row.querySelector("td:first-child").textContent;
 
-    // Получаем ID из формы (если есть)
     const formId = form.id;
-    const reportId = formId ? formId.split('-').pop() : null;
+    // Извлекаем ID более надежным способом
+    const idMatch = formId.match(/form-salon-(\d+)/);
+    const reportId = idMatch ? idMatch[1] : null;
 
     const card = parseFloat(form.card_sales.value) || 0;
     const sbp = parseFloat(form.sbp_sales.value) || 0;
-    const ratio = (sbp > 0) ? ((card / sbp) * 100).toFixed(2) : 0;
+    const ratio = (sbp > 0) ? ((sbp / (sbp + card)) * 100).toFixed(2) : 0;
     form.ratio.value = ratio + "%";
 
     const data = {
         salon_name: salonName,
         card_sales: card,
-        sbp_sales: sbp
+        sbp_sales: sbp,
+        date: new Date().toISOString().split('T')[0] // Текущая дата в формате YYYY-MM-DD
     };
-
+    console.log(formId);
     try {
-        // Если у нас есть ID, используем PUT для обновления, иначе POST для создания
+        // Если reportId есть и это число - делаем PUT, иначе POST
         const url = reportId ? `/api/reports/${reportId}` : '/api/reports/';
         const method = reportId ? 'PUT' : 'POST';
 
@@ -42,12 +45,10 @@ async function sendReportData(e, form) {
             throw new Error(errorData.detail || 'Ошибка сервера');
         }
 
-        const result = await response.json();
-        alert(reportId ? 'Отчет успешно обновлен' : 'Отчет успешно сохранен');
-        location.reload();
+        console.log(method === 'POST' ? 'Отчет успешно сохранен' : 'Отчет успешно обновлен');
+        await loadOfficesReport();
     } catch (error) {
         console.error('Ошибка:', error);
-        alert(error.message);
     } finally {
         isSubmitting = false;
     }
@@ -58,79 +59,82 @@ function displayOfficesReport(offices) {
     const tbody = document.querySelector("tbody");
     if (!tbody) return;
 
+    // Сохраняем текущие значения полей ввода перед обновлением
+    const currentValues = {};
+    document.querySelectorAll("tbody input").forEach(input => {
+        currentValues[input.name] = input.value;
+    });
+
     tbody.innerHTML = offices.map(office => {
-        const formId = `form-salon-${office.id}`;
+        const formId = `form-salon-${office.id || `new-${office.salon_name.replace(/\s+/g, '-')}`}`;
+        const cardValue = office.card_sales || currentValues['card_sales'] || 0;
+        const sbpValue = office.sbp_sales || currentValues['sbp_sales'] || 0;
+        const ratio = (sbpValue > 0) ? ((sbpValue / (cardValue + sbpValue)) * 100).toFixed(2) : 0;
+
         return `
             <tr>
-                <td>${office.salon_name}</td>
-                <td><input type="number" form="${formId}" name="card_sales" required value="${office.card_sales}"></td>
-                <td><input type="number" form="${formId}" name="sbp_sales" required value="${office.sbp_sales}"></td>
-                <td><output form="${formId}" name="ratio">${((office.sbp_sales > 0) ? ((office.sbp_sales / office.card_sales) * 100).toFixed(2) : 0)}%</output></td>
-                <td><button type="submit" form="${formId}">${office.is_submitted ? 'Обновить' : 'Отправить'}</button></td>
+                <td><button class="">${office.salon_name}</button></td>
+                <td><input type="number" form="${formId}" name="card_sales" required value="${cardValue}"></td>
+                <td><input type="number" form="${formId}" name="sbp_sales" required value="${sbpValue}"></td>
+                <td><output form="${formId}" name="ratio"><span>${ratio}%</span></output></td>
+                <td><button type="submit" form="${formId}"><ion-icon name="send"></ion-icon></button></td>
             </tr>
         `;
     }).join('');
 
+    // Удаляем старые формы
+    document.querySelectorAll('form[id^="form-salon-"]').forEach(form => form.remove());
+
+    // Создаем новые формы с обработчиками
     offices.forEach(office => {
-        const formId = `form-salon-${office.id}`;
-        let form = document.getElementById(formId);
-        if (!form) {
-            form = document.createElement("form");
-            form.id = formId;
-            form.onsubmit = (e) => sendReportData(e, form);
-            document.body.appendChild(form);
-        }
+        const formId = `form-salon-${office.id || `new-${office.salon_name.replace(/\s+/g, '-')}`}`;
+        const form = document.createElement("form");
+        form.id = formId;
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            sendReportData(e, form);
+        });
+        document.body.appendChild(form);
     });
 }
-
 // Функция загрузки списка салонов
 async function loadOfficesReport() {
     try {
-        const response = await fetch('/api/reports/');
-        if (!response.ok) throw new Error('Ошибка при загрузке салонов');
+        const [todayReports, uniqueSalons] = await Promise.all([
+            fetch('/api/reports/today').then(r => r.json()),
+            fetch('/api/unique-salons/').then(r => r.json())
+        ]);
 
-        const offices = await response.json();
-        displayOfficesReport(offices);
+        const combinedData = uniqueSalons.map(salon => {
+            const todayReport = todayReports.find(r => r.salon_name === salon.salon_name);
+            return todayReport || {
+                ...salon,
+                date: new Date().toISOString().split('T')[0],
+                card_sales: 0,
+                sbp_sales: 0,
+                is_submitted: false
+            };
+        });
+
+        combinedData.sort((a, b) => a.salon_name.localeCompare(b.salon_name));
+        displayOfficesReport(combinedData);
     } catch (error) {
-        console.error('Ошибка', error);
+        console.error('Ошибка:', error);
     }
 }
+// ДОБАВЛЕНИЕ САЛОНА ---------------  А Д М И Н К А
 
-// Основная функция отправки отчета
-// document.getElementById('submit')?.addEventListener('click', async function(e) {
-//     e.preventDefault();
-//
-//     if (isSubmitting) return;
-//     isSubmitting = true;
-//
-//     const formData = {
-//         salon_name: document.getElementById('salon-name')?.value || "Название салона",
-//         card_sales: parseFloat(document.getElementById('card-sales')?.value) || 0,
-//         sbp_sales: parseFloat(document.getElementById('sbp-sales')?.value) || 0
-//     };
-//
-//     try {
-//         const response = await fetch('/api/reports/', {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify(formData)
-//         });
-//
-//         if (!response.ok) {
-//             const errorData = await response.json();
-//             throw new Error(errorData.detail || 'Ошибка сервера');
-//         }
-//
-//         const result = await response.json();
-//         alert('Отчет успешно сохранен');
-//         location.reload();
-//     } catch (error) {
-//         console.error('Ошибка:', error);
-//         alert(error.message);
-//     } finally {
-//         isSubmitting = false;
-//     }
-// });
+// Обработчик для кнопки открытие списка салонов и редактирования
+document.querySelector('.header__offices-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    window['offices-dialog-id'].show();
+});
+// Обработчик для кнопки закрытие списка салонов и редактирования
+document.querySelector('.offices-dialog__close').addEventListener('click', function(e) {
+    e.preventDefault();
+    window['offices-dialog-id'].close();
+    loadOfficesReport();
+});
 
 // Обработчик для кнопки добавления нового салона
 document.querySelector('.offices-dialog__addbtn')?.addEventListener('click', function(e) {
@@ -203,16 +207,16 @@ async function handleAddOfficeSubmit(el) {
 // Функция загрузки списка салонов
 async function loadOffices() {
     try {
-        const response = await fetch('/api/reports/');
+        const response = await fetch('/api/unique-salons/');
         if (!response.ok) throw new Error('Ошибка при загрузке салонов');
 
         const offices = await response.json();
         displayOffices(offices);
     } catch (error) {
-        console.error('Ошибка', error);
+        console.error('Ошибка:', error);
+        alert('Не удалось загрузить список салонов');
     }
 }
-
 // Функция отображения списка салонов
 function displayOffices(offices) {
     const officesDialogUl = document.querySelector('.dialog__content ul');
@@ -243,6 +247,7 @@ async function handleEditOffice(e) {
     isSubmitting = true;
 
     const id = e.currentTarget.getAttribute('data-id');
+    console.log("ID для обновления:", id);
     const li = e.currentTarget.parentElement.parentElement;
 
     // Скрываем текст и вставляем форму
@@ -265,11 +270,11 @@ async function handleEditOffice(e) {
     const confirmBtn = li.querySelector('#edit-office__btn-confirm');
     const cancelBtn = li.querySelector('#edit-office__btn-cancel');
 
-    // Ожидаем действия пользователя (аналог dialog.returnValue)
+    // Ожидаем действия пользователя
     try {
         const newValue = await new Promise((resolve, reject) => {
             confirmBtn.addEventListener('click', () => {
-                const value = input.value.trim();
+                const value = input.value?.trim() || "";
                 if (value) {
                     resolve(value); // Подтверждение с новым значением
                 } else {
@@ -289,10 +294,13 @@ async function handleEditOffice(e) {
         const response = await fetch(`/api/reports/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ salon_name: newValue }),
+            body: JSON.stringify({ salon_name: newValue })
         });
-
-        if (!response.ok) throw new Error('Ошибка при обновлении');
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Детали ошибки:", errorData); // Логируем детали
+            throw new Error('Ошибка при обновлении');
+        }
 
         // Обновляем интерфейс
         span.textContent = newValue;
@@ -315,6 +323,7 @@ async function handleEditOffice(e) {
 async function handleDeleteOffice(e) {
     e.preventDefault();
     const id = e.currentTarget.getAttribute('data-id');
+    console.log("ID для обновления:", id);
 
     const dialog = window['dialog__confirm-del'];
     if (!dialog) return;

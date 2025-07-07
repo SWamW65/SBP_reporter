@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, Date
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import UniqueConstraint
 
 
@@ -25,14 +25,20 @@ class DailyReport(Base):
     id = Column(Integer, primary_key=True)
     salon_name = Column(String(100), nullable=False)
     date = Column(Date, nullable=False)
-    card_sales = Column(Float, nullable=False)
-    sbp_sales = Column(Float, nullable=False)
+    card_sales = Column(Float, nullable=False, default=0)  # Добавляем default
+    sbp_sales = Column(Float, nullable=False, default=0)   # Добавляем default
     is_submitted = Column(Boolean, default=False)
 
     # Добавляем уникальное ограничение
     __table_args__ = (
         UniqueConstraint('salon_name', 'date', name='unique_salon_date'),
     )
+
+    @classmethod
+    def get_all_salons(cls, db: Session):
+        """Получаем уникальные названия всех салонов"""
+        salons = db.query(cls.salon_name).distinct().all()
+        return [{"salon_name": salon[0]} for salon in salons]
 
     # Можно добавить:
     # - timestamp (автоматическое время внесения)

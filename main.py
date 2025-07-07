@@ -1,10 +1,13 @@
 from datetime import date
-from fastapi import FastAPI, Depends, HTTPException, Path, status
-from sqlalchemy.orm import Session
 from typing import Optional
-import database
-from pydantic import BaseModel, Field, validator
+
 from fastapi import Body  # Добавляем импорт
+from fastapi import FastAPI, Depends, HTTPException, Path, status
+from pydantic import BaseModel, Field
+from sqlalchemy import select, func
+from sqlalchemy.orm import Session
+
+import database
 
 app = FastAPI()
 
@@ -15,37 +18,28 @@ class ReportCreate(BaseModel):
     card_sales: float = Field(..., ge=0)
     sbp_sales: float = Field(..., ge=0)
 
-    @validator('salon_name')
-    def validate_salon_name(cls, v):
-        if not v.strip():
-            raise ValueError("Salon name cannot be empty")
-        return v.strip()
+
 
 
 class ReportUpdate(BaseModel):
-    salon_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    salon_name: Optional[str] = Field(None, min_length=0, max_length=100)
     card_sales: Optional[float] = Field(None, ge=0)
     sbp_sales: Optional[float] = Field(None, ge=0)
     is_submitted: Optional[bool] = None
 
-    @validator('salon_name')
-    def validate_salon_name(cls, v):
-        if v is not None and not v.strip():
-            raise ValueError("Salon name cannot be empty")
-        return v.strip() if v else v
+
 
 
 class ReportResponse(BaseModel):
     id: int
     salon_name: str
     date: date
-    card_sales: float
-    sbp_sales: float
+    card_sales: Optional[float] = 0  # Разрешаем None и устанавливаем значение по умолчанию
+    sbp_sales: Optional[float] = 0   # Разрешаем None и устанавливаем значение по умолчанию
     is_submitted: bool
 
     class Config:
         orm_mode = True
-
 
 @app.post("/api/reports/", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 def create_report(
@@ -78,20 +72,24 @@ def create_report(
     db.refresh(new_report)
     return new_report
 
-
-@app.get("/api/reports/", response_model=list[ReportResponse])
-def get_reports(db: Session = Depends(database.get_db)):
+@app.get("/api/reports/today", response_model=list[ReportResponse])
+def get_today_reports(db: Session = Depends(database.get_db)):
     try:
-        return db.query(database.DailyReport).order_by(database.DailyReport.date.desc()).all()
+        # Получаем отчеты за сегодня
+        today_reports = db.query(database.DailyReport) \
+            .filter(database.DailyReport.date == date.today()) \
+            .order_by(database.DailyReport.salon_name.asc()) \
+            .all()
+
+        return today_reports
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch reports: {str(e)}"
+            detail=f"Failed to fetch today's reports: {str(e)}"
         )
 
-
-@app.get("/api/reports/{id}", response_model=ReportResponse)
-def get_report(
+@app.get("/api/salons/{id}", response_model=ReportResponse)
+def get_all_salons(
         id: int = Path(..., gt=0, description="The ID of the report to get"),
         db: Session = Depends(database.get_db)
 ):
@@ -103,7 +101,28 @@ def get_report(
         )
     return report
 
+@app.get("/api/salons")
+def get_all_salons(db: Session = Depends(database.get_db)):
+    try:
+        # Получаем уникальные названия салонов
+        salons = db.query(database.DailyReport.id, database.DailyReport.salon_name)\
+               .distinct() \
+               .order_by(database.DailyReport.salon_name.asc()) \
+               .all()
+        return [{"id": salon[0], "salon_name": salon[1]} for salon in salons]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при получении списка салонов: {str(e)}"
+        )
 
+@app.get("/api/unique-salons/")
+def get_unique_salons(db: Session = Depends(database.get_db)):
+    salons = db.query(database.DailyReport)\
+               .distinct(database.DailyReport.salon_name)\
+               .order_by(database.DailyReport.salon_name, database.DailyReport.id.desc())\
+               .all()
+    return salons
 
 @app.delete("/api/reports/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_report(
@@ -135,7 +154,7 @@ def update_report(
         db: Session = Depends(database.get_db)
 ):
     try:
-        # Получаем текущий отчет
+        # Получаем текущий отчет (без изменений)
         db_report = db.query(database.DailyReport).filter(database.DailyReport.id == id).first()
         if not db_report:
             raise HTTPException(
@@ -143,13 +162,14 @@ def update_report(
                 detail="Салон не найден"
             )
 
-        # Проверяем дубликат только если изменилось имя салона
+        # Проверка дубликата (без изменений)
         if report_update.salon_name and report_update.salon_name != db_report.salon_name:
-            existing_report = db.query(database.DailyReport).filter(
-                database.DailyReport.salon_name == report_update.salon_name,
-                database.DailyReport.date == date.today(),
-                database.DailyReport.id != id  # Исключаем текущую запись из проверки
-            ).first()
+            existing_report = db.execute(
+                select(database.DailyReport)
+                .where(database.DailyReport.salon_name == report_update.salon_name)
+                .where(database.DailyReport.date == date.today())
+                .where(database.DailyReport.id != id)
+            ).scalar_one_or_none()
 
             if existing_report:
                 raise HTTPException(
@@ -157,19 +177,43 @@ def update_report(
                     detail="Салон с таким названием и датой уже существует"
                 )
 
-        # Обновляем только те поля, которые были переданы
-        for field, value in report_update.dict(exclude_unset=True).items():
-            setattr(db_report, field, value)
+        # Обновление полей (оптимизированная версия)
+        update_data = report_update.model_dump(exclude_unset=True)
+
+        # Добавим проверку на пустой update_data
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Нет данных для обновления"
+            )
+        print(f"Обновляемые поля: {update_data}")
+        for field, value in update_data.items():
+            # Добавляем проверку на существование атрибута
+            if hasattr(db_report, field):
+                setattr(db_report, field, value)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Поле {field} не существует в модели"
+                )
+
+        print("Текущие данные в БД:", db_report.__dict__)
+        print("Данные для обновления:", update_data)
 
         db.commit()
         db.refresh(db_report)
 
         return db_report
+
+    except HTTPException:
+        # Перехватываем только HTTPException чтобы не скрывать важные ошибки
+        db.rollback()
+        raise
+
     except Exception as e:
         db.rollback()
-        if isinstance(e, HTTPException):
-            raise
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при обновлении салона: {str(e)}"
         )
+
