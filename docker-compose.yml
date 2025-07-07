@@ -8,6 +8,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: samlink
       POSTGRES_DB: sbpreport
+    command: ["postgres", "-c", "listen_addresses=0.0.0.0"] # ограничеваем для безопасности только локальные вызовы вместо дефолтного 127.0.0.1
+#    command: ["postgres", "-c", "listen_addresses=*"] # любые могут обратится, оставим на всякий, но менее безопасно
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
