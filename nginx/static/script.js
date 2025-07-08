@@ -146,11 +146,10 @@ document.querySelector('.offices-dialog__addbtn')?.addEventListener('click', fun
 });
 
 // Обработчик для кнопки подтверждения добавления салона
-document.addEventListener('click', function(el) {
-    if (el.target.closest('.offices-dialog__addinputbtn')) {
-        el.preventDefault();
-        handleAddOfficeSubmit(el);
-    }
+document.querySelector(".offices-dialog__addinputbtn").addEventListener('click', function(el) {
+    console.log(el);
+    el.preventDefault();
+    handleAddOfficeSubmit(el);
 });
 
 // Функция обработки отправки формы добавления салона

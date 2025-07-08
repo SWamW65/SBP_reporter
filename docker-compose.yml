@@ -65,7 +65,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./static:/static
+      - ./backend/static:/static
     restart: unless-stopped
     networks:
       - sbp_network
