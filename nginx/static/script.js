@@ -178,7 +178,7 @@ async function handleAddOfficeSubmit(el) {
     }
 
     try {
-        const response = await fetch('/api/reports/', {
+        const response = await fetch('/api/salons/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(listOffices)
@@ -206,7 +206,9 @@ async function handleAddOfficeSubmit(el) {
 // Функция загрузки списка салонов
 async function loadOffices() {
     try {
-        const response = await fetch('/api/unique-salons/');
+        const response = await fetch('/api/salons/get', {
+            method: 'POST'
+        });
         if (!response.ok) throw new Error('Ошибка при загрузке салонов');
 
         const offices = await response.json();
@@ -341,7 +343,7 @@ async function handleDeleteOffice(e) {
     }
 
     try {
-        const response = await fetch(`/api/reports/${id}`, {
+        const response = await fetch(`/api/salons/remove/${id}`, {
             method: 'DELETE'
         });
 

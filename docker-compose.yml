@@ -50,7 +50,7 @@ services:
       SQLALCHEMY_POOL_RECYCLE: 3600
       SQLALCHEMY_POOL_TIMEOUT: 30
     volumes:
-      - ./backend/app:/app/app
+      - ./backend/app:/app
     ports:
       - "8000:8000"
     restart: unless-stopped
@@ -65,7 +65,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./backend/static:/static
+      - ./nginx/static:/usr/share/nginx/html/static/
     restart: unless-stopped
     networks:
       - sbp_network
