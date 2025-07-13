@@ -1,10 +1,11 @@
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status, Body
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from database import get_db, Salon, Report
 from models import (
     SalonCreate, SalonResponse, ReportCreate, ReportResponse,
-    SalonCheck, DateRequest
+    SalonCheck, DateRequest, SalonUpdate
 )
 
 router = APIRouter(prefix="/api")
@@ -67,25 +68,76 @@ def get_reports(db: Session = Depends(get_db)):
 
     return result
 
-@router.post("/salons/update/{id}", response_model=SalonResponse)
-def update_salons(
-        data: SalonCreate,
+@router.post("/salons/update/{id}", response_model=SalonResponse, status_code=status.HTTP_202_ACCEPTED)
+def update_salon(
+        id: int = Path(..., gt=0, description="The ID of the report to update"),
+        salon_update: SalonUpdate = Body(...),
         db: Session = Depends(get_db)
-        ):
-    # Проверяем существование салона
-    salon = db.query(Salon).filter(Salon.id == data.id).first()
-    if not salon:
-        raise HTTPException(status_code=404, detail="Salon not found")
+):
+    try:
+        # Получаем текущий отчет (без изменений)
+        db_salon = db.query(Salon).filter(Salon.id == id).first()
+        if not db_salon:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Салон не найден"
+            )
 
-    # Ищем существующий отчет
-    existing_salon = db.query(Salon).filter(
-        Salon.id == data.id
-    ).first()
+        # Проверка дубликата (без изменений)
+        if salon_update.salon_name and salon_update.salon_name != db_salon.salon_name:
+            existing_report = db.execute(
+                select(Salon)
+                .where(Salon.salon_name == salon_update.salon_name)
+                .where(Salon.id != id)
+            ).scalar_one_or_none()
 
-    db.add(existing_salon)
-    db.commit()
-    db.refresh(existing_salon)
-    return existing_salon
+            if existing_report:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Салон с таким названием и датой уже существует"
+                )
+
+        # Обновление полей (оптимизированная версия)
+        update_data = salon_update.model_dump(exclude_unset=True)
+
+        # Добавим проверку на пустой update_data
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Нет данных для обновления"
+            )
+        print(f"Обновляемые поля: {update_data}")
+        for field, value in update_data.items():
+            # Добавляем проверку на существование атрибута
+            if hasattr(db_salon, field):
+                setattr(db_salon, field, value)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Поле {field} не существует в модели"
+                )
+
+        print("Текущие данные в БД:", db_salon.__dict__)
+        print("Данные для обновления:", update_data)
+
+        db.commit()
+        db.refresh(db_salon)
+
+        return db_salon
+
+    except HTTPException:
+        # Перехватываем только HTTPException чтобы не скрывать важные ошибки
+        db.rollback()
+        raise
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при обновлении салона: {str(e)}"
+        )
+
+
 
 # ОТЧЕТЫ
 @router.post("/reports/get")

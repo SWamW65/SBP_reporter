@@ -292,8 +292,8 @@ async function handleEditOffice(e) {
         console.log("Новое значение:", newValue);
 
         // Отправляем данные на сервер (аналогично handleDeleteOffice)
-        const response = await fetch(`/api/update/{id}`, {
-            method: 'PUT',
+        const response = await fetch(`/api/salons/update/{id}`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ salon_name: newValue })
         });

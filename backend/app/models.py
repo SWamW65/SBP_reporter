@@ -5,6 +5,10 @@ from pydantic import BaseModel
 class SalonCreate(BaseModel):
     salon_name: str
 
+class SalonUpdate(BaseModel):
+    id: int
+    salon_name: str
+
 class SalonResponse(BaseModel):
     id: int
     salon_name: str
