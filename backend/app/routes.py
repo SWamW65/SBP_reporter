@@ -67,6 +67,25 @@ def get_reports(db: Session = Depends(get_db)):
 
     return result
 
+@router.post("/salons/update/{id}", response_model=SalonResponse)
+def update_salons(
+        data: SalonCreate,
+        db: Session = Depends(get_db)
+        ):
+    # Проверяем существование салона
+    salon = db.query(Salon).filter(Salon.id == data.id).first()
+    if not salon:
+        raise HTTPException(status_code=404, detail="Salon not found")
+
+    # Ищем существующий отчет
+    existing_salon = db.query(Salon).filter(
+        Salon.id == data.id
+    ).first()
+
+    db.add(existing_salon)
+    db.commit()
+    db.refresh(existing_salon)
+    return existing_salon
 
 # ОТЧЕТЫ
 @router.post("/reports/get")
