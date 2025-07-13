@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from database import get_db, Salon, Report
 from models import (
     SalonCreate, SalonResponse, ReportCreate, ReportResponse,
-    SalonCheck, DateRequest, SalonUpdate
+    SalonCheck, DateRequest
 )
 
 router = APIRouter(prefix="/api")
@@ -68,10 +68,11 @@ def get_reports(db: Session = Depends(get_db)):
 
     return result
 
+
 @router.post("/salons/update/{id}", response_model=SalonResponse, status_code=status.HTTP_202_ACCEPTED)
 def update_salon(
         id: int = Path(..., gt=0, description="The ID of the report to update"),
-        salon_update: SalonUpdate = Body(...),
+        salon_update: SalonCreate = Body(...),
         db: Session = Depends(get_db)
 ):
     try:
@@ -85,13 +86,13 @@ def update_salon(
 
         # Проверка дубликата (без изменений)
         if salon_update.salon_name and salon_update.salon_name != db_salon.salon_name:
-            existing_report = db.execute(
+            existing_salon = db.execute(
                 select(Salon)
                 .where(Salon.salon_name == salon_update.salon_name)
                 .where(Salon.id != id)
             ).scalar_one_or_none()
 
-            if existing_report:
+            if existing_salon:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Салон с таким названием и датой уже существует"
@@ -106,19 +107,9 @@ def update_salon(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Нет данных для обновления"
             )
-        print(f"Обновляемые поля: {update_data}")
-        for field, value in update_data.items():
-            # Добавляем проверку на существование атрибута
-            if hasattr(db_salon, field):
-                setattr(db_salon, field, value)
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Поле {field} не существует в модели"
-                )
 
-        print("Текущие данные в БД:", db_salon.__dict__)
-        print("Данные для обновления:", update_data)
+        if salon_update.salon_name is not None:  # Явная проверка
+            db_salon.salon_name = salon_update.salon_name
 
         db.commit()
         db.refresh(db_salon)
@@ -136,7 +127,6 @@ def update_salon(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при обновлении салона: {str(e)}"
         )
-
 
 
 # ОТЧЕТЫ
